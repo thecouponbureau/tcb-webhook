@@ -29,7 +29,7 @@ import java.util.Scanner;
  */
 public class SNSServlet extends HttpServlet {
 	private static final long serialVersionUID = 1L;
-	private ObjectReader readerSnsSubscriptionConfirmation;
+	private ObjectReader readerSnsMessage;
        
     /**
      * @see HttpServlet#HttpServlet()
@@ -43,7 +43,7 @@ public class SNSServlet extends HttpServlet {
 	 */
 	public void init(ServletConfig config) throws ServletException {
 		System.out.println("SNSServlet \"Init\" method called");
-		readerSnsSubscriptionConfirmation = new ObjectMapper().readerFor(SnsSubscriptionConfirmation.class);
+		readerSnsMessage = new ObjectMapper().readerFor(SNSMessage.class);
 	}
 
 	/**
@@ -73,7 +73,7 @@ public class SNSServlet extends HttpServlet {
 		String str = builder.toString();
 		System.out.println(str);
 
-		SnsSubscriptionConfirmation msg = readerSnsSubscriptionConfirmation.readValue(str);
+		SNSMessage msg = readerSnsMessage.readValue(str);
 
 		// The signature is based on SignatureVersion 1.
 		// If the sig version is something other than 1,
@@ -127,7 +127,7 @@ public class SNSServlet extends HttpServlet {
 		System.out.println(">>Done processing message: " + msg.getMessageId());
 	}
 
-	private static boolean isMessageSignatureValid(SnsSubscriptionConfirmation msg) {
+	private static boolean isMessageSignatureValid(SNSMessage msg) {
 		try {
 			URL url = new URL(msg.getSigningCertUrl());
 			verifyMessageSignatureURL(msg, url);
@@ -146,7 +146,7 @@ public class SNSServlet extends HttpServlet {
 		}
 	}
 
-	private static void verifyMessageSignatureURL(SnsSubscriptionConfirmation msg, URL endpoint) {
+	private static void verifyMessageSignatureURL(SNSMessage msg, URL endpoint) {
 		URI certUri = URI.create(msg.getSigningCertUrl());
 
 		if (!"https".equals(certUri.getScheme())) {
@@ -162,7 +162,7 @@ public class SNSServlet extends HttpServlet {
 		}
 	}
 
-	private static byte [] getMessageBytesToSign (SnsSubscriptionConfirmation msg) {
+	private static byte [] getMessageBytesToSign (SNSMessage msg) {
 		byte [] bytesToSign = null;
 		if (msg.getType().equals("Notification"))
 			bytesToSign = buildNotificationStringToSign(msg).getBytes();
@@ -172,7 +172,7 @@ public class SNSServlet extends HttpServlet {
 	}
 
 	//Build the string to sign for Notification messages.
-	public static String buildNotificationStringToSign(SnsSubscriptionConfirmation msg) {
+	public static String buildNotificationStringToSign(SNSMessage msg) {
 		String stringToSign = null;
 
 		//Build the string to sign from the values in the message.
@@ -198,7 +198,7 @@ public class SNSServlet extends HttpServlet {
 
 	//Build the string to sign for SubscriptionConfirmation
 //and UnsubscribeConfirmation messages.
-	public static String buildSubscriptionStringToSign(SnsSubscriptionConfirmation msg) {
+	public static String buildSubscriptionStringToSign(SNSMessage msg) {
 		String stringToSign = null;
 		//Build the string to sign from the values in the message.
 		//Name and values separated by newline characters
