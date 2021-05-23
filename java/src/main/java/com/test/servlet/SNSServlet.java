@@ -3,6 +3,7 @@ package com.test.servlet;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
 import org.apache.commons.codec.binary.Base64;
+import org.json.JSONObject;
 
 import javax.servlet.Servlet;
 import javax.servlet.ServletConfig;
@@ -12,8 +13,11 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.InputStream;
+import java.math.BigInteger;
 import java.net.URI;
 import java.net.URL;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.security.Signature;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
@@ -29,7 +33,6 @@ import java.util.Scanner;
  */
 public class SNSServlet extends HttpServlet {
 	private static final long serialVersionUID = 1L;
-	private ObjectReader readerSnsMessage;
        
     /**
      * @see HttpServlet#HttpServlet()
@@ -43,7 +46,6 @@ public class SNSServlet extends HttpServlet {
 	 */
 	public void init(ServletConfig config) throws ServletException {
 		System.out.println("SNSServlet \"Init\" method called");
-		readerSnsMessage = new ObjectMapper().readerFor(SNSMessage.class);
 	}
 
 	/**
@@ -73,6 +75,7 @@ public class SNSServlet extends HttpServlet {
 		String str = builder.toString();
 		System.out.println(str);
 
+		ObjectReader readerSnsMessage = new ObjectMapper().readerFor(SNSMessage.class);
 		SNSMessage msg = readerSnsMessage.readValue(str);
 
 		// The signature is based on SignatureVersion 1.
@@ -101,6 +104,38 @@ public class SNSServlet extends HttpServlet {
 			}
 			logMsgAndSubject += " Message: " + msg.getMessage();
 			System.out.println(logMsgAndSubject);
+
+			String strMsg = msg.getMessage();
+			JSONObject jsonObject = new JSONObject(strMsg);
+			String data = jsonObject.getString("data");
+			System.out.println(data);
+
+			Base64 base64 = new Base64();
+			String decodedData = new String(base64.decode(data.getBytes()));
+			jsonObject = new JSONObject(decodedData);
+			String action = jsonObject.getString("action");
+			String primary_signature = jsonObject.getString("primary_signature");
+			String secondary_signature = jsonObject.getString("secondary_signature");
+			String primaryCallbackSecret = "secret-primary";
+			String secondaryCallbackSecret = "secret-secondary";
+			String primary_signature_calculated = "";
+			String secondary_signature_calculated = "";
+			if(action.equals("report")) {
+				String reportURL = jsonObject.getString("reportURL");
+				String job_id = jsonObject.getString("job_id");
+				primary_signature_calculated = getMd5(reportURL + action + job_id + primaryCallbackSecret);
+				secondary_signature_calculated = getMd5(reportURL + action + job_id + secondaryCallbackSecret);
+			} else {
+				String gs1 = jsonObject.getString("gs1");
+				primary_signature_calculated = getMd5(gs1 + action + primaryCallbackSecret);
+				secondary_signature_calculated = getMd5(gs1 + action + secondaryCallbackSecret);
+			}
+			if(primary_signature.equals(primary_signature_calculated)
+			|| secondary_signature.equals(secondary_signature_calculated)) {
+				System.out.println("TCB Signature verified");
+			} else {
+				System.out.println("TCB Signature could not be verified");
+			}
 		} else if (messagetype.equals("SubscriptionConfirmation")) {
 			//You should make sure that this subscription is from the topic you expect. Compare topicARN to your list of topics
 			//that you want to enable to add this endpoint as a subscription.
@@ -125,6 +160,23 @@ public class SNSServlet extends HttpServlet {
 			System.out.println(">>Unknown message type.");
 		}
 		System.out.println(">>Done processing message: " + msg.getMessageId());
+	}
+
+	public static String getMd5(String input)
+	{
+		try {
+			MessageDigest md = MessageDigest.getInstance("MD5");
+			byte[] messageDigest = md.digest(input.getBytes());
+			BigInteger no = new BigInteger(1, messageDigest);
+			String hashtext = no.toString(16);
+			while (hashtext.length() < 32) {
+				hashtext = "0" + hashtext;
+			}
+			return hashtext;
+		}
+		catch (NoSuchAlgorithmException e) {
+			throw new RuntimeException(e);
+		}
 	}
 
 	private static boolean isMessageSignatureValid(SNSMessage msg) {
