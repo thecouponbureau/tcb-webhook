@@ -72,11 +72,21 @@ public class SNSServlet extends HttpServlet {
 		while (scan.hasNextLine()) {
 			builder.append(scan.nextLine());
 		}
-		String str = builder.toString();
-		System.out.println(str);
+		String strBody = builder.toString();
+
+		if (messagetype.equals("TCBVerifier")) {
+			//process messagetype TCBVerifier
+			if(!strBody.equals("")) {
+				JSONObject jsonObject = new JSONObject(strBody);
+				if(!jsonObject.getString("TCBVerifier").isEmpty()) {
+					response.setStatus(200);
+				}
+			}
+			return;
+		}
 
 		ObjectReader readerSnsMessage = new ObjectMapper().readerFor(SNSMessage.class);
-		SNSMessage msg = readerSnsMessage.readValue(str);
+		SNSMessage msg = readerSnsMessage.readValue(strBody);
 
 		// The signature is based on SignatureVersion 1.
 		// If the sig version is something other than 1,
@@ -143,6 +153,7 @@ public class SNSServlet extends HttpServlet {
 			if(primary_signature.equals(primary_signature_calculated)
 			|| secondary_signature.equals(secondary_signature_calculated)) {
 				System.out.println("TCB Signature verified");
+				response.setStatus(200);
 			} else {
 				System.out.println("TCB Signature could not be verified");
 			}
@@ -158,6 +169,7 @@ public class SNSServlet extends HttpServlet {
 				sb.append(sc.nextLine());
 			}
 			System.out.println(">>Subscription confirmation (" + msg.getSubscribeUrl() + ") Return value: " + sb.toString());
+			response.setStatus(200);
 			//Process the return value to ensure the endpoint is subscribed.
 		} else if (messagetype.equals("UnsubscribeConfirmation")) {
 			//Handle UnsubscribeConfirmation message.
@@ -165,6 +177,7 @@ public class SNSServlet extends HttpServlet {
 			//You can read the SubscribeURL from this message and
 			//re-subscribe the endpoint.
 			System.out.println(">>Unsubscribe confirmation: " + msg.getMessage());
+			response.setStatus(200);
 		} else {
 			//Handle unknown message type.
 			System.out.println(">>Unknown message type.");

@@ -10,7 +10,15 @@ app.post('/', (req, res) => {
     const messageType = req.headers['x-amz-sns-message-type'];
     console.log(messageType);
 
-    if(messageType === "Notification") {
+    if(messageType === "TCBVerifier") {
+        //process messagetype TCBVerifier
+        console.log(">>TCBVerifier: " + req.body);
+        if(req.body) {
+            if(req.body.TCBVerifier !== "") {
+                res.send({});
+            }
+        }
+    } else if(messageType === "Notification") {
         console.log(">>Notification received from topic " + req.body.TopicArn);
         console.log("Subject: " + req.body.Subject);
         console.log("Message: " + req.body.Message);
@@ -25,7 +33,7 @@ app.post('/', (req, res) => {
         jsonObject = JSON.parse(decodedData);
         let primary_signature_calculated = "";
         let secondary_signature_calculated = "";
-        if(action.equals("report")) {
+        if(jsonObject.action === "report") {
             primary_signature_calculated = getMd5(jsonObject.reportUrl + jsonObject.action + jsonObject.job_id + process.env.PRIMARY_CALLBACK_SIGNATURE);
             secondary_signature_calculated = getMd5(jsonObject.reportUrl + jsonObject.action + jsonObject.job_id + process.env.SECONDARY_CALLBACK_SIGNATURE);
         } else {
@@ -40,6 +48,7 @@ app.post('/', (req, res) => {
         } else {
             console.log("TCB Signature could not be verified");
         }
+        res.send({});
     } else if(messageType === "SubscriptionConfirmation") {
         const options = {
             method: 'GET'
@@ -54,13 +63,13 @@ app.post('/', (req, res) => {
         });
         req2.end();
         console.log(">>Subscription confirmation (" + req.body.SubscribeURL + ")");
+        res.send({});
     } else if(messageType === "UnsubscribeConfirmation") {
         console.log(">>Unsubscribe confirmation: " + req.body.Message);
     } else {
         console.log(">>Unknown message type.");
     }
     console.log(">>Done processing message: " + req.body.MessageId);
-    res.send({});
 });
 
 const crypto = require('crypto');
