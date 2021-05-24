@@ -15,11 +15,13 @@ app.post('/', (req, res) => {
         console.log("Subject: " + req.body.Subject);
         console.log("Message: " + req.body.Message);
 
+        //decode base64 data string
         let jsonObject = JSON.parse(req.body.Message);
         let bufferObj = Buffer.from(jsonObject.data, "base64");
         let decodedData = bufferObj.toString("utf8");
         console.log("decodedData: " + decodedData);
 
+        //calculate primary signature and secondary signature
         jsonObject = JSON.parse(decodedData);
         let primary_signature_calculated = "";
         let secondary_signature_calculated = "";
@@ -30,6 +32,8 @@ app.post('/', (req, res) => {
             primary_signature_calculated = getMd5(jsonObject.gs1 + jsonObject.action + process.env.PRIMARY_CALLBACK_SIGNATURE);
             secondary_signature_calculated = getMd5(jsonObject.gs1 + jsonObject.action + process.env.SECONDARY_CALLBACK_SIGNATURE);
         }
+
+        //compare signatures
         if(primary_signature_calculated === jsonObject.primary_signature
         || secondary_signature_calculated === jsonObject.secondary_signature) {
             console.log("TCB Signature verified");

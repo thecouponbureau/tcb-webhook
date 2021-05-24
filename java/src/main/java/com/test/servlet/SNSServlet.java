@@ -105,14 +105,19 @@ public class SNSServlet extends HttpServlet {
 			logMsgAndSubject += " Message: " + msg.getMessage();
 			System.out.println(logMsgAndSubject);
 
+			//https://try.thecouponbureau.org/developer/getting_started
+
 			String strMsg = msg.getMessage();
 			JSONObject jsonObject = new JSONObject(strMsg);
 			String data = jsonObject.getString("data");
 			System.out.println(data);
 
+			//decode base64 data string
 			Base64 base64 = new Base64();
 			String decodedData = new String(base64.decode(data.getBytes()));
 			System.out.println(decodedData);
+
+			//get json fields
 			jsonObject = new JSONObject(decodedData);
 			String action = jsonObject.getString("action");
 			String primary_signature = jsonObject.getString("primary_signature");
@@ -121,6 +126,8 @@ public class SNSServlet extends HttpServlet {
 			String secondaryCallbackSecret = System.getenv("SECONDARY_CALLBACK_SIGNATURE");
 			String primary_signature_calculated = "";
 			String secondary_signature_calculated = "";
+
+			//calculate primary signature and secondary signature
 			if(action.equals("report")) {
 				String reportUrl = jsonObject.getString("reportUrl");
 				String job_id = jsonObject.getString("job_id");
@@ -131,6 +138,8 @@ public class SNSServlet extends HttpServlet {
 				primary_signature_calculated = getMd5(gs1 + action + primaryCallbackSecret);
 				secondary_signature_calculated = getMd5(gs1 + action + secondaryCallbackSecret);
 			}
+
+			//compare signatures
 			if(primary_signature.equals(primary_signature_calculated)
 			|| secondary_signature.equals(secondary_signature_calculated)) {
 				System.out.println("TCB Signature verified");
