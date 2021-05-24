@@ -1,3 +1,5 @@
+require('dotenv').config()
+
 const https = require('https');
 const express = require('express');
 const app = express();
@@ -13,18 +15,20 @@ app.post('/', (req, res) => {
         console.log("Subject: " + req.body.Subject);
         console.log("Message: " + req.body.Message);
 
-        let bufferObj = Buffer.from(req.body.Message.data, "base64");
+        let jsonObject = JSON.parse(req.body.Message);
+        let bufferObj = Buffer.from(jsonObject.data, "base64");
         let decodedData = bufferObj.toString("utf8");
+        console.log("decodedData: " + decodedData);
 
-        const jsonObject = JSON.parse(decodedData);
+        jsonObject = JSON.parse(decodedData);
         let primary_signature_calculated = "";
         let secondary_signature_calculated = "";
         if(action.equals("report")) {
-            primary_signature_calculated = getMd5(jsonObject.reportURL + jsonObject.action + jsonObject.job_id + "secret-primary");
-            secondary_signature_calculated = getMd5(jsonObject.reportURL + jsonObject.action + jsonObject.job_id + "secret-secondary");
+            primary_signature_calculated = getMd5(jsonObject.reportUrl + jsonObject.action + jsonObject.job_id + process.env.PRIMARY_CALLBACK_SIGNATURE);
+            secondary_signature_calculated = getMd5(jsonObject.reportUrl + jsonObject.action + jsonObject.job_id + process.env.SECONDARY_CALLBACK_SIGNATURE);
         } else {
-            primary_signature_calculated = getMd5(jsonObject.gs1 + jsonObject.action + "secret-primary");
-            secondary_signature_calculated = getMd5(jsonObject.gs1 + jsonObject.action + "secret-secondary");
+            primary_signature_calculated = getMd5(jsonObject.gs1 + jsonObject.action + process.env.PRIMARY_CALLBACK_SIGNATURE);
+            secondary_signature_calculated = getMd5(jsonObject.gs1 + jsonObject.action + process.env.SECONDARY_CALLBACK_SIGNATURE);
         }
         if(primary_signature_calculated === jsonObject.primary_signature
         || secondary_signature_calculated === jsonObject.secondary_signature) {
@@ -52,6 +56,7 @@ app.post('/', (req, res) => {
         console.log(">>Unknown message type.");
     }
     console.log(">>Done processing message: " + req.body.MessageId);
+    res.send({});
 });
 
 const crypto = require('crypto');

@@ -112,19 +112,20 @@ public class SNSServlet extends HttpServlet {
 
 			Base64 base64 = new Base64();
 			String decodedData = new String(base64.decode(data.getBytes()));
+			System.out.println(decodedData);
 			jsonObject = new JSONObject(decodedData);
 			String action = jsonObject.getString("action");
 			String primary_signature = jsonObject.getString("primary_signature");
 			String secondary_signature = jsonObject.getString("secondary_signature");
-			String primaryCallbackSecret = "secret-primary";
-			String secondaryCallbackSecret = "secret-secondary";
+			String primaryCallbackSecret = System.getenv("PRIMARY_CALLBACK_SIGNATURE");
+			String secondaryCallbackSecret = System.getenv("SECONDARY_CALLBACK_SIGNATURE");
 			String primary_signature_calculated = "";
 			String secondary_signature_calculated = "";
 			if(action.equals("report")) {
-				String reportURL = jsonObject.getString("reportURL");
+				String reportUrl = jsonObject.getString("reportUrl");
 				String job_id = jsonObject.getString("job_id");
-				primary_signature_calculated = getMd5(reportURL + action + job_id + primaryCallbackSecret);
-				secondary_signature_calculated = getMd5(reportURL + action + job_id + secondaryCallbackSecret);
+				primary_signature_calculated = getMd5(reportUrl + action + job_id + primaryCallbackSecret);
+				secondary_signature_calculated = getMd5(reportUrl + action + job_id + secondaryCallbackSecret);
 			} else {
 				String gs1 = jsonObject.getString("gs1");
 				primary_signature_calculated = getMd5(gs1 + action + primaryCallbackSecret);
