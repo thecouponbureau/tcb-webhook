@@ -132,8 +132,8 @@ public class SNSServlet extends HttpServlet {
 			String action = jsonObject.getString("action");
 			String primary_signature = jsonObject.getString("primary_signature");
 			String secondary_signature = jsonObject.getString("secondary_signature");
-			String primaryCallbackSecret = System.getenv("PRIMARY_CALLBACK_SIGNATURE");
-			String secondaryCallbackSecret = System.getenv("SECONDARY_CALLBACK_SIGNATURE");
+			String primaryCallbackSecret = System.getenv("PRIMARY_CALLBACK_SECRET");
+			String secondaryCallbackSecret = System.getenv("SECONDARY_CALLBACK_SECRET");
 			String primary_signature_calculated = "";
 			String secondary_signature_calculated = "";
 

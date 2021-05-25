@@ -34,11 +34,11 @@ app.post('/', (req, res) => {
         let primary_signature_calculated = "";
         let secondary_signature_calculated = "";
         if(jsonObject.action === "report") {
-            primary_signature_calculated = getMd5(jsonObject.reportUrl + jsonObject.action + jsonObject.job_id + process.env.PRIMARY_CALLBACK_SIGNATURE);
-            secondary_signature_calculated = getMd5(jsonObject.reportUrl + jsonObject.action + jsonObject.job_id + process.env.SECONDARY_CALLBACK_SIGNATURE);
+            primary_signature_calculated = getMd5(jsonObject.reportUrl + jsonObject.action + jsonObject.job_id + process.env.PRIMARY_CALLBACK_SECRET);
+            secondary_signature_calculated = getMd5(jsonObject.reportUrl + jsonObject.action + jsonObject.job_id + process.env.SECONDARY_CALLBACK_SECRET);
         } else {
-            primary_signature_calculated = getMd5(jsonObject.gs1 + jsonObject.action + process.env.PRIMARY_CALLBACK_SIGNATURE);
-            secondary_signature_calculated = getMd5(jsonObject.gs1 + jsonObject.action + process.env.SECONDARY_CALLBACK_SIGNATURE);
+            primary_signature_calculated = getMd5(jsonObject.gs1 + jsonObject.action + process.env.PRIMARY_CALLBACK_SECRET);
+            secondary_signature_calculated = getMd5(jsonObject.gs1 + jsonObject.action + process.env.SECONDARY_CALLBACK_SECRET);
         }
 
         //compare signatures
